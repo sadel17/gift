@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>System</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: black;
+    font-family: monospace;
+    color: #00ffcc;
+}
+
+#app {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* LOADING */
+#loadingScreen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+}
+
+#progressBar {
+    width: 60%;
+    height: 10px;
+    border: 1px solid #00ffcc;
+    margin-top: 20px;
+}
+
+#progressFill {
+    height: 100%;
+    width: 0%;
+    background: #00ffcc;
+}
+
+/* BG EMOJI */
+#bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bg-emoji {
+    position: absolute;
+    font-size: 32px;
+    opacity: 0.25;
+    animation: floatBg linear forwards;
+}
+
+@keyframes floatBg {
+    from { transform: translateY(0); }
+    to { transform: translateY(-120vh); }
+}
+
+/* SCREENS */
+.screen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity 0.6s ease;
+    z-index: 1;
+}
+
+.screen.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.textBox {
+    width: 80%;
+    max-width: 900px;
+    height: 220px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 34px;
+}
+
+.cursor {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+.dots::after {
+    content: "";
+    animation: dots 1.2s infinite;
+}
+
+@keyframes dots {
+    0% { content: ""; }
+    33% { content: "."; }
+    66% { content: ".."; }
+    100% { content: "..."; }
+}
+
+.final {
+    font-size: 40px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- LOADING -->
+    <div id="loadingScreen">
+        <div>Initializing system...</div>
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+    </div>
+
+    <!-- BG -->
+    <div id="bg"></div>
+
+    <!-- SCREENS -->
+    <div class="screen active" id="screen0">
+        <div class="textBox" id="text0"></div>
+    </div>
+
+    <div class="screen" id="screen1">
+        <div class="textBox">Loading solution<span class="dots"></span></div>
+    </div>
+
+    <div class="screen" id="screen2">
+        <div class="textBox">ACCESS GRANTED<br>DECISION CONFIRMED</div>
+    </div>
+
+    <div class="screen" id="screen3">
+        <div class="textBox final">Required to go out with me. 💌</div>
+    </div>
+
+</div>
+
+<script>
+
+const bg = document.getElementById("bg");
+
+let emojiInterval = null;
+
+/* CONTEXT EMOJIS */
+const contextEmojis = {
+    0: ["⚙️","💻","📡"],
+    1: null,  // NO EMOJI
+    2: null,  // NO EMOJI
+    3: ["💌"] // FINAL
+};
+
+/* START EMOJIS */
+function startEmojis(emojis) {
+
+    stopEmojis();
+
+    if (!emojis) return;
+
+    emojiInterval = setInterval(() => {
+
+        const el = document.createElement("div");
+        el.className = "bg-emoji";
+
+        el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+        el.style.left = Math.random() * window.innerWidth + "px";
+        el.style.top = window.innerHeight + "px";
+
+        const duration = 6000 + Math.random() * 4000;
+        el.style.animationDuration = duration + "ms";
+
+        bg.appendChild(el);
+
+        setTimeout(() => el.remove(), duration);
+
+    }, 500);
+}
+
+/* STOP EMOJIS */
+function stopEmojis() {
+    if (emojiInterval) {
+        clearInterval(emojiInterval);
+        emojiInterval = null;
+    }
+    bg.innerHTML = "";
+}
+
+/* TYPEWRITER */
+const screensText = [
+    "Booting system...",
+    "Loading user data...",
+    "Running diagnostics...",
+    "Status: active.",
+    "User detected.",
+    "Analyzing profile...\nWarning: user too hot 🔥",
+    "Attempting to lower temperature... 🌡️",
+    "Still thinking about you.",
+    "Attention required.",
+    "You’re kind of distracting.",
+    "Connection unstable."
+];
+
+let current = 0;
+const textEl = document.getElementById("text0");
+
+function typeText(text, callback) {
+
+    textEl.innerHTML = "";
+
+    let i = 0;
+
+    const cursor = document.createElement("span");
+    cursor.className = "cursor";
+    cursor.innerText = "|";
+
+    textEl.appendChild(cursor);
+
+    function type() {
+        if (i < text.length) {
+            textEl.innerHTML = text.substring(0, i + 1);
+            textEl.appendChild(cursor);
+            i++;
+            setTimeout(type, 100); // leggermente più lento ma fluido
+        } else {
+            setTimeout(callback, 1500);
+        }
+    }
+
+    type();
+}
+
+/* SCREEN SWITCH */
+function showScreen(id, emojiIndex) {
+
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+
+    startEmojis(contextEmojis[emojiIndex]);
+}
+
+/* FLOW */
+function next() {
+
+    current++;
+
+    if (current < screensText.length) {
+        typeText(screensText[current], next);
+    } else {
+
+        showScreen("screen1", 1); // no emoji
+
+        setTimeout(() => {
+
+            showScreen("screen2", 2); // no emoji
+
+            setTimeout(() => {
+
+                showScreen("screen3", 3); // 💌 only
+
+            }, 2000);
+
+        }, 5000);
+    }
+}
+
+/* LOADING BAR */
+const loadingFill = document.getElementById("progressFill");
+const loadingScreen = document.getElementById("loadingScreen");
+
+let progress = 0;
+
+function startLoading() {
+
+    let interval = setInterval(() => {
+
+        progress += Math.random() * 10;
+
+        if (progress >= 100) progress = 100;
+
+        loadingFill.style.width = progress + "%";
+
+        if (progress === 100) {
+            clearInterval(interval);
+
+            setTimeout(() => {
+                loadingScreen.style.display = "none";
+                showScreen("screen0", 0);
+                typeText(screensText[current], next);
+            }, 700);
+        }
+
+    }, 120);
+}
+
+startLoading();
+
+</script>
+
+</body>
+</html>
